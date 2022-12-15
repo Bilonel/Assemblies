@@ -30,77 +30,104 @@ CBLOCK 0x20
     temp2:1
     waitSeconds:1
     
-    i:1
-    count:1
-    RESULT_OF_DIV:1
-    RL:1
-    RH:1
 ENDC
 
 ;===========TEST CASE=============    
-MOVLW MOVE_LEFT
+MOVLW 0
 MOVWF direction
 
-MOVLW 11
+MOVLW 1
 MOVWF value
     
 MOVLW 0
 MOVWF count
 
-MOVLW 255
-MOVWF waitSeconds
-    
 ;=================================
+MAIN
+    GOTO WHILE_LOOP
+    
+WAIT
+    CALL WAIT_250
+    ;CALL WAIT_500
+    RETURN
+    
     
 WHILE_LOOP
     MOVF value,W
     MOVWF PORTD
  
-    GOTO WAIT
+    CALL WAIT
 
     INCFSZ count
     
     MOVF count,W
     MOVWF temp
-    MOVLW 14
+    MOVLW 15
     SUBWF temp,W
     BTFSC STATUS,C
     GOTO TURN_ALL_LEDS_TWICE; IF COUNT > 14
     
-    ; ELSE
     MOVF value,W
     MOVWF temp
     MOVLW 127
     SUBWF temp,W
     BTFSC STATUS,C
-    GOTO CHANGE_DIRECTION ; IF VALUE >127
+    CALL CHANGE_DIRECTION ; IF VALUE >127
  	
     GOTO SET_VALUE
 
     GOTO WHILE_LOOP
 
 CHANGE_DIRECTION
-    direction=MOVE_RIGHT
-    GOTO SET_VALUE
+    MOVLW 1
+    MOVWF direction
+    MOVF value,W
+    BCF STATUS,C
     RETURN
 SET_VALUE
-    MOVF dir,W
-    BTFSC 0,b
-    SHIFT_RIGHT	; IF DIR == MOVE_RIGHT
+    BTFSC direction,0
+    GOTO SHIFT_RIGHT	; IF DIR == MOVE_RIGHT
     	; IF DIR == MOVE_LEFT
-
-    RETURN
+    RLF value,F ; VALUE<<1
+    GOTO WHILE_LOOP
 SHIFT_RIGHT
-    MOVF value,W
-    ADDWF value,W
+    RRF value,F
+    GOTO WHILE_LOOP
+TURN_ALL_LEDS_TWICE
+    
+    MOVLW 0
+    MOVWF direction
+
+    MOVLW 1
+    MOVWF value
+
+    MOVLW 0
+    MOVWF count 
+    
+    CLRF PORTD
+    CALL WAIT
+    MOVLW 255
+    MOVWF PORTD
+    CALL WAIT
+    CLRF PORTD
+    CALL WAIT
+    MOVLW 255
+    MOVWF PORTD
+    CALL WAIT
+    CLRF PORTD
+    GOTO WHILE_LOOP
+
+WAIT_500
+    CALL WAIT_250
+    CALL WAIT_250
     RETURN
-WAIT
-    MOVF waitSeconds,W
+WAIT_250
+    MOVLW 255
     MOVWF temp
-    MOVF d'250'
+    MOVF 250,W
     MOVWF temp2
     GOTO WAIT_250ms
-    RETURN
+    GOTO WAIT_END
 WAIT_250ms
     DECFSZ temp2
     GOTO WAIT_1ms
